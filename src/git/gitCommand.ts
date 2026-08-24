@@ -98,7 +98,6 @@ export async function findGitRoot(filePath: string): Promise<string | undefined>
   try {
     const result = await runGit(["rev-parse", "--show-toplevel"], startDir);
     if (result.code !== 0) {
-      gitRootCache.set(startDir, { root: undefined, at: Date.now() });
       return undefined;
     }
     const root = result.stdout.trim();
@@ -108,7 +107,6 @@ export async function findGitRoot(filePath: string): Promise<string | undefined>
     if (error instanceof GitNotFoundError) {
       throw error;
     }
-    gitRootCache.set(startDir, { root: undefined, at: Date.now() });
     return undefined;
   }
 }

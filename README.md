@@ -35,7 +35,7 @@ Full-line green highlighting in the editor, and changed files/folders marked in 
 3. Open a file with Git changes. Highlighting should appear without pressing any button.
 
 ```bash
-cursor --install-extension aggressive-git-diff-0.1.3.vsix
+cursor --install-extension aggressive-git-diff-0.1.4.vsix
 ```
 
 ## Commands

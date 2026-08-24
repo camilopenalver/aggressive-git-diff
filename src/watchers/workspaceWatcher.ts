@@ -25,11 +25,27 @@ export class WorkspaceWatcher implements vscode.Disposable {
     this.disposables.push(
       vscode.window.onDidChangeActiveTextEditor((editor) => {
         if (editor) {
-          this.schedule(`editor:${editor.document.uri.toString()}`, () => {
-            this.onFileChange(editor.document.uri);
-            void this.watchGitRootFor(editor.document.uri);
-          });
+          this.schedule(
+            `editor:${editor.document.uri.toString()}`,
+            () => {
+              this.onFileChange(editor.document.uri);
+              void this.watchGitRootFor(editor.document.uri);
+            },
+            0
+          );
         }
+      }),
+      vscode.window.onDidChangeVisibleTextEditors((editors) => {
+        this.schedule(
+          "visible-editors",
+          () => {
+            for (const editor of editors) {
+              this.onFileChange(editor.document.uri);
+              void this.watchGitRootFor(editor.document.uri);
+            }
+          },
+          50
+        );
       }),
       vscode.workspace.onDidSaveTextDocument((document) => {
         this.schedule(`save:${document.uri.toString()}`, () => {
@@ -71,7 +87,7 @@ export class WorkspaceWatcher implements vscode.Disposable {
       }),
       vscode.window.onDidChangeWindowState((state) => {
         if (state.focused) {
-          this.schedule("focus", () => this.onGitRefsChange());
+          this.schedule("focus", () => this.onGitRefsChange(), 50);
         }
       }),
       vscode.workspace.onDidChangeWorkspaceFolders(() => {
@@ -173,7 +189,7 @@ export class WorkspaceWatcher implements vscode.Disposable {
     this.gitWatchers.set(gitRoot, watchers);
   }
 
-  private schedule(key: string, action: () => void): void {
+  private schedule(key: string, action: () => void, delay = this.debounceMs): void {
     const existing = this.timers.get(key);
     if (existing) {
       clearTimeout(existing);
@@ -181,7 +197,7 @@ export class WorkspaceWatcher implements vscode.Disposable {
     const timer = setTimeout(() => {
       this.timers.delete(key);
       action();
-    }, this.debounceMs);
+    }, delay);
     this.timers.set(key, timer);
   }
 }

@@ -97,13 +97,12 @@ export function activate(context: vscode.ExtensionContext): void {
     } else {
       provider.invalidate();
     }
-    const editors = gitRoot
-      ? vscode.window.visibleTextEditors.filter(
-          (editor) =>
-            editor.document.uri.scheme === "file" &&
-            isPathInside(gitRoot, editor.document.uri.fsPath)
-        )
-      : vscode.window.visibleTextEditors;
+    const editors = currentEditors().filter((editor) => {
+      if (editor.document.uri.scheme !== "file") {
+        return false;
+      }
+      return gitRoot ? isPathInside(gitRoot, editor.document.uri.fsPath) : true;
+    });
     await Promise.all([
       ...editors.map((editor) => refreshEditor(editor)),
       refreshExplorer(),
@@ -112,9 +111,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const refreshUri = async (uri: vscode.Uri): Promise<void> => {
     provider.invalidate(uri.fsPath);
-    const editors = vscode.window.visibleTextEditors.filter(
-      (editor) => editor.document.uri.toString() === uri.toString()
-    );
+    const editors = editorsForUri(uri);
     if (editors.length === 0) {
       return;
     }
@@ -143,6 +140,11 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerFileDecorationProvider(explorer),
     statusBar,
     watcher,
+    vscode.workspace.onDidOpenTextDocument((document) => {
+      if (document.uri.scheme === "file") {
+        void refreshUri(document.uri);
+      }
+    }),
     vscode.workspace.onDidChangeConfiguration((event) => {
       if (!event.affectsConfiguration(CONFIG_SECTION)) {
         return;
@@ -178,10 +180,51 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   void refreshVisible();
+  const retryFast = setTimeout(() => void refreshVisible(), 400);
+  const retrySlow = setTimeout(() => void refreshVisible(), 1600);
+  context.subscriptions.push({
+    dispose: () => {
+      clearTimeout(retryFast);
+      clearTimeout(retrySlow);
+    },
+  });
 }
 
 export function deactivate(): void {
   // Disposables registered on the extension context are cleaned up by VS Code.
+}
+
+function currentEditors(): vscode.TextEditor[] {
+  return uniqueEditors([
+    ...vscode.window.visibleTextEditors,
+    vscode.window.activeTextEditor,
+  ]);
+}
+
+function editorsForUri(uri: vscode.Uri): vscode.TextEditor[] {
+  const wanted = uri.toString();
+  return currentEditors().filter(
+    (editor) => editor.document.uri.toString() === wanted
+  );
+}
+
+function uniqueEditors(
+  editors: Array<vscode.TextEditor | undefined>
+): vscode.TextEditor[] {
+  const seen = new Set<string>();
+  const result: vscode.TextEditor[] = [];
+  for (const editor of editors) {
+    if (!editor) {
+      continue;
+    }
+    const key = `${editor.document.uri.toString()}:${editor.viewColumn ?? "none"}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    result.push(editor);
+  }
+  return result;
 }
 
 function readConfig() {

@@ -2,7 +2,7 @@
   "name": "aggressive-git-diff",
   "displayName": "Aggressive Git Diff",
   "description": "Highlight every uncommitted Git change vs HEAD with aggressive full-line green/red decorations. No recording, no sessions — always working tree vs HEAD.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "capegogu",
   "license": "MIT",
   "icon": "media/icon.png",
