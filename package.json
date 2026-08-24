@@ -17,12 +17,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/capegogu/aggressive-git-diff.git"
+    "url": "https://github.com/camilopenalver/aggressive-git-diff.git"
   },
   "bugs": {
-    "url": "https://github.com/capegogu/aggressive-git-diff/issues"
+    "url": "https://github.com/camilopenalver/aggressive-git-diff/issues"
   },
-  "homepage": "https://github.com/capegogu/aggressive-git-diff#readme",
+  "homepage": "https://github.com/camilopenalver/aggressive-git-diff#readme",
   "engines": {
     "vscode": "^1.85.0"
   },
