@@ -10,6 +10,7 @@ export class WorkspaceWatcher implements vscode.Disposable {
   constructor(
     private readonly onFileChange: (uri: vscode.Uri) => void,
     private readonly onGitRefsChange: () => void,
+    private readonly onDiskChange: () => void,
     debounceMs: number
   ) {
     this.debounceMs = debounceMs;
@@ -32,6 +33,7 @@ export class WorkspaceWatcher implements vscode.Disposable {
       vscode.workspace.onDidSaveTextDocument((document) => {
         this.schedule(`save:${document.uri.toString()}`, () => {
           this.onFileChange(document.uri);
+          this.onDiskChange();
         });
       }),
       vscode.workspace.onDidChangeTextDocument((event) => {
@@ -44,18 +46,25 @@ export class WorkspaceWatcher implements vscode.Disposable {
       }),
       vscode.workspace.onDidCreateFiles((event) => {
         for (const uri of event.files) {
-          this.schedule(`create:${uri.toString()}`, () => this.onFileChange(uri));
+          this.schedule(`create:${uri.toString()}`, () => {
+            this.onFileChange(uri);
+            this.onDiskChange();
+          });
         }
       }),
       vscode.workspace.onDidDeleteFiles((event) => {
         for (const uri of event.files) {
-          this.schedule(`delete:${uri.toString()}`, () => this.onFileChange(uri));
+          this.schedule(`delete:${uri.toString()}`, () => {
+            this.onFileChange(uri);
+            this.onDiskChange();
+          });
         }
       }),
       vscode.workspace.onDidRenameFiles((event) => {
         for (const file of event.files) {
           this.schedule(`rename:${file.newUri.toString()}`, () => {
             this.onFileChange(file.newUri);
+            this.onDiskChange();
           });
         }
       }),
@@ -76,6 +85,11 @@ export class WorkspaceWatcher implements vscode.Disposable {
 
     for (const editor of vscode.window.visibleTextEditors) {
       void this.watchGitRootFor(editor.document.uri);
+    }
+    for (const folder of vscode.workspace.workspaceFolders ?? []) {
+      void this.watchGitRootFor(
+        vscode.Uri.joinPath(folder.uri, "_workspace")
+      );
     }
   }
 
@@ -115,6 +129,7 @@ export class WorkspaceWatcher implements vscode.Disposable {
     const visible = vscode.window.visibleTextEditors.some(
       (editor) => editor.document.uri.toString() === uri.toString()
     );
+    this.schedule("disk", () => this.onDiskChange());
     if (open || visible) {
       this.schedule(`fs:${uri.toString()}`, () => this.onFileChange(uri));
     }

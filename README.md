@@ -1,47 +1,52 @@
 # Aggressive Git Diff
 
-Extensión para **Cursor** y **VS Code** que resalta de forma muy visible **todos** los cambios Git actuales del workspace, siempre contra `HEAD`.
+A **Cursor** and **VS Code** extension that aggressively highlights **every** current Git change in the workspace, always against `HEAD`.
 
-No hay recording, ni sesiones, ni snapshots. La referencia es automática:
+There is no recording, no session, and no snapshot. The reference is automatic:
 
 ```text
-HEAD  vs  working tree actual
+HEAD  vs  current working tree
 ```
 
-Conceptualmente: `git diff HEAD` (staged + unstaged).
+Conceptually: `git diff HEAD` (staged + unstaged).
 
-## Qué hace
+## What it does
 
-- Líneas **añadidas**: fondo verde en toda la línea.
-- Líneas **modificadas**: fondo verde/ámbar agresivo en la línea nueva.
-- Líneas **eliminadas**: indicador rojo imposible de pasar por alto (`− N deleted lines`) anclado a la línea vecina.
-- Archivos **untracked**: todo el archivo se pinta como añadido.
-- Al abrir un archivo que ya tenía cambios, el resaltado aparece **inmediatamente**.
-- Tras un commit, si `HEAD === working tree`, el resaltado desaparece solo.
-- Reacciona a cambios externos (otros agentes, scripts, checkout, branch, reset) con debounce.
+- **Added lines**: full-line green background.
+- **Modified lines**: aggressive green/amber background on the new line.
+- **Deleted lines**: each removed line is shown in place as red struck-through virtual text (`− the exact code`), not just a count.
+- **Untracked files**: the entire file is painted as added.
+- **Explorer**: files and folders with changes vs HEAD get a bright color and a badge (`M`, `U`, `A`, `D`).
+- Opening a file that already had changes highlights them **immediately**.
+- After a commit, if `HEAD === working tree`, highlighting clears on its own.
+- Reacts to external edits (other agents, scripts, checkout, branch, reset) with debounce.
 
-## Instalación en Cursor
+## Screenshot
 
-1. Instala el `.vsix` generado (`npm run package`).
-2. En Cursor: **Extensions → … → Install from VSIX…**
-3. Abre un archivo con cambios Git. El resaltado debe aparecer sin pulsar ningún botón.
+![Aggressive Git Diff highlighting added, modified, and deleted lines in the editor, plus explorer badges on changed files](media/editor-highlighting.png)
 
-También:
+Full-line green highlighting in the editor, and changed files/folders marked in the explorer versus `HEAD`.
+
+## Install in Cursor
+
+1. Build the `.vsix` with `npm run package`.
+2. In Cursor: **Extensions → … → Install from VSIX…**
+3. Open a file with Git changes. Highlighting should appear without pressing any button.
 
 ```bash
-cursor --install-extension aggressive-git-diff-0.1.0.vsix
+cursor --install-extension aggressive-git-diff-0.1.2.vsix
 ```
 
-## Comandos
+## Commands
 
 - `Aggressive Git Diff: Enable`
 - `Aggressive Git Diff: Disable`
 - `Aggressive Git Diff: Toggle`
 - `Aggressive Git Diff: Refresh`
 
-Hay un botón discreto en la status bar (`HEAD`). No hace falta usarlo: la extensión funciona sola.
+A discreet `HEAD` item sits in the status bar. You do not need to use it; the extension runs on its own.
 
-## Configuración
+## Settings
 
 ```json
 {
@@ -53,12 +58,13 @@ Hay un botón discreto en la status bar (`HEAD`). No hace falta usarlo: la exten
   "aggressiveGitDiff.showDeletedIndicators": true,
   "aggressiveGitDiff.showDeletedContent": true,
   "aggressiveGitDiff.highlightWholeLine": true,
+  "aggressiveGitDiff.highlightExplorer": true,
   "aggressiveGitDiff.debounceMs": 200,
   "aggressiveGitDiff.maxFileSizeKb": 1024
 }
 ```
 
-## Desarrollo
+## Development
 
 ```bash
 npm install
@@ -68,8 +74,8 @@ npm run build
 npm run package
 ```
 
-Pulsa **F5** en Cursor/VS Code con esta carpeta abierta para lanzar un Extension Development Host.
+Press **F5** in Cursor/VS Code with this folder open to launch an Extension Development Host.
 
-## Compatibilidad
+## Compatibility
 
-Usa únicamente APIs públicas y estables de extensiones de VS Code (`createTextEditorDecorationType`, `setDecorations`, watchers, commands, configuration). No depende de APIs internas de Cursor.
+Uses only public, stable VS Code extension APIs (`createTextEditorDecorationType`, `setDecorations`, `registerFileDecorationProvider`, watchers, commands, configuration). It does not depend on Cursor-internal APIs.

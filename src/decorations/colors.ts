@@ -47,3 +47,23 @@ export function formatDeletedLabel(count: number, preview?: string): string {
   const clipped = compact.length > 80 ? `${compact.slice(0, 77)}...` : compact;
   return `────────${base}· ${clipped} ────────`;
 }
+
+const MAX_DELETED_LINES = 100;
+const MAX_LINE_CHARS = 400;
+
+export function formatDeletedLines(lines: string[]): string[] {
+  const source = lines.length > 0 ? lines : [""];
+  const visible = source.slice(0, MAX_DELETED_LINES);
+  const formatted = visible.map(formatOneDeletedLine);
+  if (source.length > MAX_DELETED_LINES) {
+    formatted.push(`− … ${source.length - MAX_DELETED_LINES} more deleted lines`);
+  }
+  return formatted;
+}
+
+function formatOneDeletedLine(line: string): string {
+  const raw = line.replace(/\r/g, "").replace(/\u0000/g, "");
+  const clipped =
+    raw.length > MAX_LINE_CHARS ? `${raw.slice(0, MAX_LINE_CHARS)}…` : raw;
+  return `− ${clipped}`;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDeletedLabel, withOpacity } from "./colors";
+import { formatDeletedLabel, formatDeletedLines, withOpacity } from "./colors";
 
 describe("withOpacity", () => {
   it("replaces the alpha of an rgba color", () => {
@@ -25,5 +25,32 @@ describe("formatDeletedLabel", () => {
     expect(formatDeletedLabel(3, "country = \"Colombia\"")).toContain(
       'country = "Colombia"'
     );
+  });
+});
+
+describe("formatDeletedLines", () => {
+  it("renders each deleted line instead of a count summary", () => {
+    const lines = formatDeletedLines([
+      '"user_subscription_credits",',
+      '"user_id": user_id,',
+      "amount = 5,",
+      "reason = \"refund\",",
+      "created_at = now(),",
+    ]);
+
+    expect(lines).toHaveLength(5);
+    expect(lines.some((line) => line.includes("5 deleted"))).toBe(false);
+    expect(lines[0]).toBe('− "user_subscription_credits",');
+    expect(lines[2]).toBe("− amount = 5,");
+  });
+
+  it("preserves indentation of the original deleted code", () => {
+    expect(formatDeletedLines(["    return None"])).toEqual([
+      "−     return None",
+    ]);
+  });
+
+  it("keeps empty deleted lines visible", () => {
+    expect(formatDeletedLines([""])).toEqual(["− "]);
   });
 });

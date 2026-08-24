@@ -2,7 +2,7 @@
   "name": "aggressive-git-diff",
   "displayName": "Aggressive Git Diff",
   "description": "Highlight every uncommitted Git change vs HEAD with aggressive full-line green/red decorations. No recording, no sessions — always working tree vs HEAD.",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "publisher": "capegogu",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -102,6 +102,11 @@
           "default": true,
           "description": "Paint the full line background, not only the gutter."
         },
+        "aggressiveGitDiff.highlightExplorer": {
+          "type": "boolean",
+          "default": true,
+          "description": "Color and badge files and folders in the explorer that differ from Git HEAD."
+        },
         "aggressiveGitDiff.debounceMs": {
           "type": "number",
           "default": 200,
@@ -116,7 +121,45 @@
           "description": "Skip highlighting files larger than this size (KB)."
         }
       }
-    }
+    },
+    "colors": [
+      {
+        "id": "aggressiveGitDiff.explorerModifiedForeground",
+        "description": "Explorer color for files modified versus HEAD.",
+        "defaults": {
+          "dark": "#3DDC84",
+          "light": "#148F45",
+          "highContrast": "#3DDC84"
+        }
+      },
+      {
+        "id": "aggressiveGitDiff.explorerAddedForeground",
+        "description": "Explorer color for added or untracked files versus HEAD.",
+        "defaults": {
+          "dark": "#2EE56D",
+          "light": "#0B7A38",
+          "highContrast": "#2EE56D"
+        }
+      },
+      {
+        "id": "aggressiveGitDiff.explorerUntrackedForeground",
+        "description": "Explorer color for untracked files.",
+        "defaults": {
+          "dark": "#2EE56D",
+          "light": "#0B7A38",
+          "highContrast": "#2EE56D"
+        }
+      },
+      {
+        "id": "aggressiveGitDiff.explorerDeletedForeground",
+        "description": "Explorer color for deleted files versus HEAD.",
+        "defaults": {
+          "dark": "#FF6B6B",
+          "light": "#C62828",
+          "highContrast": "#FF6B6B"
+        }
+      }
+    ]
   },
   "scripts": {
     "compile": "tsc -p . --noEmit",

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { formatDeletedLabel, withOpacity } from "./colors";
+import { formatDeletedLabel, formatDeletedLines, withOpacity } from "./colors";
 import type { FileDiffResult } from "../types";
 
 interface DecorationSet {
@@ -11,6 +11,7 @@ interface DecorationSet {
 export class DecorationManager {
   private decorations: DecorationSet | undefined;
   private decoratedEditors = new Set<vscode.TextEditor>();
+  private deletedLineBackground = "rgba(255, 70, 70, 0.38)";
 
   recreate(config: {
     addedBackground: string;
@@ -23,6 +24,7 @@ export class DecorationManager {
     const addedBg = withOpacity(config.addedBackground, config.opacity);
     const modifiedBg = withOpacity(config.modifiedBackground, Math.min(1, config.opacity + 0.04));
     const deletedBg = withOpacity(config.deletedBackground, Math.min(1, config.opacity + 0.1));
+    this.deletedLineBackground = deletedBg;
 
     this.decorations = {
       added: vscode.window.createTextEditorDecorationType({
@@ -47,10 +49,6 @@ export class DecorationManager {
         isWholeLine: false,
         overviewRulerColor: "rgba(255, 70, 70, 0.95)",
         overviewRulerLane: vscode.OverviewRulerLane.Full,
-        borderColor: "rgba(255, 70, 70, 0.95)",
-        borderWidth: "0 0 0 8px",
-        borderStyle: "solid",
-        backgroundColor: deletedBg,
       }),
     };
   }
@@ -71,25 +69,29 @@ export class DecorationManager {
       lineCount
     );
     const deleted = options.showDeletedIndicators
-      ? result.diff.deleted.map((block) => {
+      ? result.diff.deleted.flatMap((block) => {
           const line = clampLine(block.adjacentLine, lineCount);
-          const preview = options.showDeletedContent
-            ? block.deletedLines[0]
-            : undefined;
-          const contentText = formatDeletedLabel(block.deletedCount, preview);
           const slot = block.position === "before" ? "before" : "after";
-          return {
+          const texts = options.showDeletedContent
+            ? formatDeletedLines(
+                block.deletedLines.length > 0
+                  ? block.deletedLines
+                  : Array.from({ length: Math.max(block.deletedCount, 1) }, () => "")
+              )
+            : [formatDeletedLabel(block.deletedCount)];
+          return texts.map((contentText) => ({
             range: new vscode.Range(line, 0, line, 0),
             renderOptions: {
               [slot]: {
                 contentText,
-                color: "#ffd6d6",
-                backgroundColor: "rgba(255, 70, 70, 0.42)",
-                fontWeight: "bold",
-                margin: block.position === "before" ? "0 10px 0 0" : "0 0 0 10px",
+                color: "#ffc9c9",
+                backgroundColor: this.deletedLineBackground,
+                fontWeight: "normal",
+                textDecoration:
+                  "line-through; display: block; width: 100%; white-space: pre; padding: 0 8px; box-sizing: border-box; border-left: 6px solid rgba(255, 70, 70, 0.95);",
               },
             },
-          } satisfies vscode.DecorationOptions;
+          })) satisfies vscode.DecorationOptions[];
         })
       : [];
 

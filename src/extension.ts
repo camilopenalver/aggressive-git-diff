@@ -1,7 +1,9 @@
 import * as vscode from "vscode";
 import { DecorationManager } from "./decorations/decorationManager";
+import { ExplorerDecorationProvider } from "./explorer/explorerDecorationProvider";
 import { GitNotFoundError } from "./git/gitCommand";
 import { GitDiffProvider } from "./git/gitDiffProvider";
+import { GitStatusIndex } from "./git/gitStatusIndex";
 import { WorkspaceWatcher } from "./watchers/workspaceWatcher";
 
 const CONFIG_SECTION = "aggressiveGitDiff";
@@ -9,6 +11,8 @@ const CONFIG_SECTION = "aggressiveGitDiff";
 export function activate(context: vscode.ExtensionContext): void {
   const provider = new GitDiffProvider();
   const decorations = new DecorationManager();
+  const statusIndex = new GitStatusIndex();
+  const explorer = new ExplorerDecorationProvider(statusIndex);
   const statusBar = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Right,
     10
@@ -23,6 +27,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const config = readConfig();
     decorations.recreate(config);
     watcher?.setDebounceMs(config.debounceMs);
+    explorer.setEnabled(config.enabled && config.highlightExplorer);
     updateStatusBar(statusBar, config.enabled, gitAvailable);
     return config;
   };
@@ -56,6 +61,9 @@ export function activate(context: vscode.ExtensionContext): void {
       if (error instanceof GitNotFoundError) {
         gitAvailable = false;
         decorations.clearAll();
+        statusIndex.clear();
+        explorer.setEnabled(false);
+        explorer.notify();
         updateStatusBar(statusBar, config.enabled, false);
         if (!gitWarningShown) {
           gitWarningShown = true;
@@ -69,11 +77,27 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   };
 
+  const refreshExplorer = async (): Promise<void> => {
+    const config = readConfig();
+    if (!config.enabled || !config.highlightExplorer || !gitAvailable) {
+      statusIndex.clear();
+      explorer.setEnabled(false);
+      explorer.notify();
+      return;
+    }
+    explorer.setEnabled(true);
+    const folders =
+      vscode.workspace.workspaceFolders?.map((folder) => folder.uri.fsPath) ?? [];
+    await statusIndex.refreshFromWorkspaceFolders(folders);
+    explorer.notify();
+  };
+
   const refreshVisible = async (): Promise<void> => {
     provider.invalidate();
-    await Promise.all(
-      vscode.window.visibleTextEditors.map((editor) => refreshEditor(editor))
-    );
+    await Promise.all([
+      ...vscode.window.visibleTextEditors.map((editor) => refreshEditor(editor)),
+      refreshExplorer(),
+    ]);
   };
 
   const refreshUri = async (uri: vscode.Uri): Promise<void> => {
@@ -96,12 +120,17 @@ export function activate(context: vscode.ExtensionContext): void {
     () => {
       void refreshVisible();
     },
+    () => {
+      void refreshExplorer();
+    },
     readConfig().debounceMs
   );
   watcher.start();
 
   context.subscriptions.push(
     decorations,
+    explorer,
+    vscode.window.registerFileDecorationProvider(explorer),
     statusBar,
     watcher,
     vscode.workspace.onDidChangeConfiguration((event) => {
@@ -117,12 +146,18 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("aggressiveGitDiff.disable", async () => {
       await setEnabled(false);
       decorations.clearAll();
+      statusIndex.clear();
+      explorer.setEnabled(false);
+      explorer.notify();
     }),
     vscode.commands.registerCommand("aggressiveGitDiff.toggle", async () => {
       const enabled = readConfig().enabled;
       await setEnabled(!enabled);
       if (enabled) {
         decorations.clearAll();
+        statusIndex.clear();
+        explorer.setEnabled(false);
+        explorer.notify();
       } else {
         void refreshVisible();
       }
@@ -156,6 +191,7 @@ function readConfig() {
     showDeletedIndicators: config.get<boolean>("showDeletedIndicators", true),
     showDeletedContent: config.get<boolean>("showDeletedContent", true),
     highlightWholeLine: config.get<boolean>("highlightWholeLine", true),
+    highlightExplorer: config.get<boolean>("highlightExplorer", true),
     debounceMs: config.get<number>("debounceMs", 200),
     maxFileSizeKb: config.get<number>("maxFileSizeKb", 1024),
   };
