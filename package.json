@@ -1,0 +1,138 @@
+{
+  "name": "aggressive-git-diff",
+  "displayName": "Aggressive Git Diff",
+  "description": "Highlight every uncommitted Git change vs HEAD with aggressive full-line green/red decorations. No recording, no sessions — always working tree vs HEAD.",
+  "version": "0.1.0",
+  "publisher": "capegogu",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "keywords": [
+    "git",
+    "diff",
+    "highlight",
+    "cursor",
+    "uncommitted",
+    "working-tree",
+    "HEAD"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/capegogu/aggressive-git-diff.git"
+  },
+  "bugs": {
+    "url": "https://github.com/capegogu/aggressive-git-diff/issues"
+  },
+  "homepage": "https://github.com/capegogu/aggressive-git-diff#readme",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "SCM Providers"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aggressiveGitDiff.enable",
+        "title": "Enable",
+        "category": "Aggressive Git Diff"
+      },
+      {
+        "command": "aggressiveGitDiff.disable",
+        "title": "Disable",
+        "category": "Aggressive Git Diff"
+      },
+      {
+        "command": "aggressiveGitDiff.toggle",
+        "title": "Toggle",
+        "category": "Aggressive Git Diff"
+      },
+      {
+        "command": "aggressiveGitDiff.refresh",
+        "title": "Refresh",
+        "category": "Aggressive Git Diff"
+      }
+    ],
+    "configuration": {
+      "title": "Aggressive Git Diff",
+      "properties": {
+        "aggressiveGitDiff.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Highlight all working-tree changes versus Git HEAD automatically."
+        },
+        "aggressiveGitDiff.addedBackground": {
+          "type": "string",
+          "default": "rgba(40, 200, 90, 0.28)",
+          "description": "Background color for added lines."
+        },
+        "aggressiveGitDiff.modifiedBackground": {
+          "type": "string",
+          "default": "rgba(40, 200, 90, 0.22)",
+          "description": "Background color for modified lines in the working tree."
+        },
+        "aggressiveGitDiff.deletedBackground": {
+          "type": "string",
+          "default": "rgba(255, 70, 70, 0.32)",
+          "description": "Background color for deleted-line indicators."
+        },
+        "aggressiveGitDiff.opacity": {
+          "type": "number",
+          "default": 0.25,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Alpha applied to highlight backgrounds. Overrides the alpha channel of the configured colors."
+        },
+        "aggressiveGitDiff.showDeletedIndicators": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show highly visible indicators where lines were deleted."
+        },
+        "aggressiveGitDiff.showDeletedContent": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include a truncated preview of deleted text in the indicator."
+        },
+        "aggressiveGitDiff.highlightWholeLine": {
+          "type": "boolean",
+          "default": true,
+          "description": "Paint the full line background, not only the gutter."
+        },
+        "aggressiveGitDiff.debounceMs": {
+          "type": "number",
+          "default": 200,
+          "minimum": 50,
+          "maximum": 2000,
+          "description": "Debounce for Git refreshes after file or HEAD changes."
+        },
+        "aggressiveGitDiff.maxFileSizeKb": {
+          "type": "number",
+          "default": 1024,
+          "minimum": 16,
+          "description": "Skip highlighting files larger than this size (KB)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p . --noEmit",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "watch": "npm run build -- --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "package": "npm run compile && npm run test && npm run build && vsce package --no-dependencies",
+    "vscode:prepublish": "npm run compile && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.3.2",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
