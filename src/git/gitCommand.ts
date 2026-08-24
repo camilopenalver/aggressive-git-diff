@@ -1,5 +1,6 @@
 import { spawn } from "child_process";
 import * as path from "path";
+import { startDirFor } from "./gitRoots";
 
 export class GitNotFoundError extends Error {
   constructor() {
@@ -88,7 +89,7 @@ export function clearGitRootCache(): void {
 }
 
 export async function findGitRoot(filePath: string): Promise<string | undefined> {
-  const startDir = path.dirname(filePath);
+  const startDir = startDirFor(filePath);
   const cached = gitRootCache.get(startDir);
   if (cached && Date.now() - cached.at < GIT_ROOT_TTL_MS) {
     return cached.root;

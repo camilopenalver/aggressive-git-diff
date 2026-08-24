@@ -1,5 +1,6 @@
 import * as path from "path";
-import { findGitRoot, runGit } from "./gitCommand";
+import { runGit } from "./gitCommand";
+import { discoverGitRoots } from "./gitRoots";
 import {
   ancestorDirectories,
   parsePorcelainStatus,
@@ -30,8 +31,7 @@ export class GitStatusIndex {
   async refreshFromWorkspaceFolders(folderPaths: string[]): Promise<void> {
     const roots = new Set<string>();
     for (const folderPath of folderPaths) {
-      const gitRoot = await findGitRoot(path.join(folderPath, "_workspace"));
-      if (gitRoot) {
+      for (const gitRoot of discoverGitRoots(folderPath)) {
         roots.add(gitRoot);
       }
     }

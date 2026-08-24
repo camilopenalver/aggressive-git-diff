@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { findGitRoot } from "../git/gitCommand";
+import { discoverGitRoots, shouldIgnoreFsPath } from "../git/gitRoots";
 
 export class WorkspaceWatcher implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
@@ -9,7 +10,7 @@ export class WorkspaceWatcher implements vscode.Disposable {
 
   constructor(
     private readonly onFileChange: (uri: vscode.Uri) => void,
-    private readonly onGitRefsChange: () => void,
+    private readonly onGitRefsChange: (gitRoot?: string) => void,
     private readonly onDiskChange: () => void,
     debounceMs: number
   ) {
@@ -72,6 +73,10 @@ export class WorkspaceWatcher implements vscode.Disposable {
         if (state.focused) {
           this.schedule("focus", () => this.onGitRefsChange());
         }
+      }),
+      vscode.workspace.onDidChangeWorkspaceFolders(() => {
+        this.discoverAndWatch();
+        this.schedule("workspace-folders", () => this.onGitRefsChange());
       })
     );
 
@@ -83,14 +88,7 @@ export class WorkspaceWatcher implements vscode.Disposable {
       fsWatcher.onDidDelete((uri) => this.onFsEvent(uri))
     );
 
-    for (const editor of vscode.window.visibleTextEditors) {
-      void this.watchGitRootFor(editor.document.uri);
-    }
-    for (const folder of vscode.workspace.workspaceFolders ?? []) {
-      void this.watchGitRootFor(
-        vscode.Uri.joinPath(folder.uri, "_workspace")
-      );
-    }
+    this.discoverAndWatch();
   }
 
   dispose(): void {
@@ -110,16 +108,23 @@ export class WorkspaceWatcher implements vscode.Disposable {
     this.disposables.length = 0;
   }
 
+  private discoverAndWatch(): void {
+    for (const folder of vscode.workspace.workspaceFolders ?? []) {
+      for (const gitRoot of discoverGitRoots(folder.uri.fsPath)) {
+        this.watchGitRoot(gitRoot);
+      }
+    }
+    for (const editor of vscode.window.visibleTextEditors) {
+      void this.watchGitRootFor(editor.document.uri);
+    }
+  }
+
   private onFsEvent(uri: vscode.Uri): void {
     const fsPath = uri.fsPath.replace(/\\/g, "/");
     if (fsPath.includes("/.git/")) {
-      if (
-        fsPath.endsWith("/.git/HEAD") ||
-        fsPath.endsWith("/.git/index") ||
-        fsPath.includes("/.git/refs/")
-      ) {
-        this.schedule("git-refs", () => this.onGitRefsChange());
-      }
+      return;
+    }
+    if (shouldIgnoreFsPath(fsPath)) {
       return;
     }
 
@@ -140,7 +145,13 @@ export class WorkspaceWatcher implements vscode.Disposable {
       return;
     }
     const gitRoot = await findGitRoot(uri.fsPath);
-    if (!gitRoot || this.gitWatchers.has(gitRoot)) {
+    if (gitRoot) {
+      this.watchGitRoot(gitRoot);
+    }
+  }
+
+  private watchGitRoot(gitRoot: string): void {
+    if (this.gitWatchers.has(gitRoot)) {
       return;
     }
 
@@ -150,11 +161,13 @@ export class WorkspaceWatcher implements vscode.Disposable {
       const watcher = vscode.workspace.createFileSystemWatcher(
         new vscode.RelativePattern(gitRoot, pattern)
       );
+      const notify = () =>
+        this.schedule(`git-refs:${gitRoot}`, () => this.onGitRefsChange(gitRoot));
       watchers.push(
         watcher,
-        watcher.onDidChange(() => this.schedule("git-refs", () => this.onGitRefsChange())),
-        watcher.onDidCreate(() => this.schedule("git-refs", () => this.onGitRefsChange())),
-        watcher.onDidDelete(() => this.schedule("git-refs", () => this.onGitRefsChange()))
+        watcher.onDidChange(notify),
+        watcher.onDidCreate(notify),
+        watcher.onDidDelete(notify)
       );
     }
     this.gitWatchers.set(gitRoot, watchers);

@@ -24,6 +24,16 @@ export class GitDiffProvider {
     this.cache.delete(filePath);
   }
 
+  invalidateUnder(gitRoot: string): void {
+    const prefix = path.normalize(gitRoot);
+    for (const filePath of this.cache.keys()) {
+      const normalized = path.normalize(filePath);
+      if (normalized === prefix || normalized.startsWith(prefix + path.sep)) {
+        this.cache.delete(filePath);
+      }
+    }
+  }
+
   async getFileDiff(args: {
     filePath: string;
     lineCount: number;

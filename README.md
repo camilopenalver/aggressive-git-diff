@@ -20,6 +20,7 @@ Conceptually: `git diff HEAD` (staged + unstaged).
 - Opening a file that already had changes highlights them **immediately**.
 - After a commit, if `HEAD === working tree`, highlighting clears on its own.
 - Reacts to external edits (other agents, scripts, checkout, branch, reset) with debounce.
+- Nested Git repositories work even when the workspace root itself is not a Git repo.
 
 ## Screenshot
 
@@ -34,7 +35,7 @@ Full-line green highlighting in the editor, and changed files/folders marked in 
 3. Open a file with Git changes. Highlighting should appear without pressing any button.
 
 ```bash
-cursor --install-extension aggressive-git-diff-0.1.2.vsix
+cursor --install-extension aggressive-git-diff-0.1.3.vsix
 ```
 
 ## Commands

@@ -3,6 +3,7 @@ import { DecorationManager } from "./decorations/decorationManager";
 import { ExplorerDecorationProvider } from "./explorer/explorerDecorationProvider";
 import { GitNotFoundError } from "./git/gitCommand";
 import { GitDiffProvider } from "./git/gitDiffProvider";
+import { isPathInside } from "./git/gitRoots";
 import { GitStatusIndex } from "./git/gitStatusIndex";
 import { WorkspaceWatcher } from "./watchers/workspaceWatcher";
 
@@ -71,9 +72,7 @@ export function activate(context: vscode.ExtensionContext): void {
             "Aggressive Git Diff: Git was not found on PATH. Highlighting is paused."
           );
         }
-        return;
       }
-      decorations.clear(editor);
     }
   };
 
@@ -92,10 +91,21 @@ export function activate(context: vscode.ExtensionContext): void {
     explorer.notify();
   };
 
-  const refreshVisible = async (): Promise<void> => {
-    provider.invalidate();
+  const refreshVisible = async (gitRoot?: string): Promise<void> => {
+    if (gitRoot) {
+      provider.invalidateUnder(gitRoot);
+    } else {
+      provider.invalidate();
+    }
+    const editors = gitRoot
+      ? vscode.window.visibleTextEditors.filter(
+          (editor) =>
+            editor.document.uri.scheme === "file" &&
+            isPathInside(gitRoot, editor.document.uri.fsPath)
+        )
+      : vscode.window.visibleTextEditors;
     await Promise.all([
-      ...vscode.window.visibleTextEditors.map((editor) => refreshEditor(editor)),
+      ...editors.map((editor) => refreshEditor(editor)),
       refreshExplorer(),
     ]);
   };
@@ -117,8 +127,8 @@ export function activate(context: vscode.ExtensionContext): void {
     (uri) => {
       void refreshUri(uri);
     },
-    () => {
-      void refreshVisible();
+    (gitRoot) => {
+      void refreshVisible(gitRoot);
     },
     () => {
       void refreshExplorer();
