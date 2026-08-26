@@ -23,11 +23,15 @@ Conceptually: `git diff HEAD` (staged + unstaged).
 - Reacts to external edits (other agents, scripts, checkout, branch, reset) with debounce.
 - Nested Git repositories work even when the workspace root itself is not a Git repo.
 
-## Screenshot
+## Screenshots
 
 ![Aggressive Git Diff highlighting added, modified, and deleted lines in the editor, plus explorer badges on changed files](media/editor-highlighting.png)
 
 Full-line green highlighting in the editor, and changed files/folders marked in the explorer versus `HEAD`.
+
+![Explorer showing only folders and files with uncommitted Git changes after enabling the filter](media/explorer-changed-files-filter.png)
+
+The explorer filter hides every unchanged file and folder, so the tree collapses to the directories that actually contain working-tree changes versus `HEAD`. Click the filter icon in the explorer title bar to turn this on or off.
 
 ## Install in Cursor
 
