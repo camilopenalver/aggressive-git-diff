@@ -17,6 +17,7 @@ Conceptually: `git diff HEAD` (staged + unstaged).
 - **Deleted lines**: each removed line is shown in place as red struck-through virtual text (`− the exact code`), not just a count.
 - **Untracked files**: the entire file is painted as added.
 - **Explorer**: files and folders with changes vs HEAD get a bright color and a badge (`M`, `U`, `A`, `D`).
+- **Explorer filter**: a filter icon in the explorer title bar (next to New File) toggles a view that hides every file and folder without uncommitted changes.
 - Opening a file that already had changes highlights them **immediately**.
 - After a commit, if `HEAD === working tree`, highlighting clears on its own.
 - Reacts to external edits (other agents, scripts, checkout, branch, reset) with debounce.
@@ -35,7 +36,7 @@ Full-line green highlighting in the editor, and changed files/folders marked in 
 3. Open a file with Git changes. Highlighting should appear without pressing any button.
 
 ```bash
-cursor --install-extension aggressive-git-diff-0.1.4.vsix
+cursor --install-extension aggressive-git-diff-0.1.5.vsix
 ```
 
 ## Commands
@@ -44,8 +45,11 @@ cursor --install-extension aggressive-git-diff-0.1.4.vsix
 - `Aggressive Git Diff: Disable`
 - `Aggressive Git Diff: Toggle`
 - `Aggressive Git Diff: Refresh`
+- `Aggressive Git Diff: Show Only Git Changes in Explorer`
 
 A discreet `HEAD` item sits in the status bar. You do not need to use it; the extension runs on its own.
+
+The explorer filter button stays on until you click it again. It hides unchanged files in the native explorer; turn it off to see the full tree. Native Git/Cursor revision diffs are left alone — highlighting only applies to regular file editors, so the built-in diff view no longer overlaps with this extension.
 
 ## Settings
 

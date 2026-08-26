@@ -2,7 +2,7 @@
   "name": "aggressive-git-diff",
   "displayName": "Aggressive Git Diff",
   "description": "Highlight every uncommitted Git change vs HEAD with aggressive full-line green/red decorations. No recording, no sessions — always working tree vs HEAD.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "capegogu",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -55,8 +55,40 @@
         "command": "aggressiveGitDiff.refresh",
         "title": "Refresh",
         "category": "Aggressive Git Diff"
+      },
+      {
+        "command": "aggressiveGitDiff.toggleChangedOnly",
+        "title": "Show Only Git Changes in Explorer",
+        "icon": "$(filter)",
+        "category": "Aggressive Git Diff"
+      },
+      {
+        "command": "aggressiveGitDiff.toggleChangedOnlyOn",
+        "title": "Show All Files in Explorer",
+        "icon": "$(filter-filled)",
+        "category": "Aggressive Git Diff"
       }
     ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "aggressiveGitDiff.toggleChangedOnlyOn",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "aggressiveGitDiff.toggleChangedOnly",
+          "when": "view == workbench.explorer.fileView && !aggressiveGitDiff.changedOnly",
+          "group": "navigation"
+        },
+        {
+          "command": "aggressiveGitDiff.toggleChangedOnlyOn",
+          "when": "view == workbench.explorer.fileView && aggressiveGitDiff.changedOnly",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "title": "Aggressive Git Diff",
       "properties": {

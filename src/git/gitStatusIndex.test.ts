@@ -35,6 +35,12 @@ describe("GitStatusIndex", () => {
     expect(index.getKind(path.join(repo, "backend"))).toBe("folder");
     expect(index.getKind(path.join(repo, "backend", "routes"))).toBe("folder");
     expect(index.getKind(path.join(repo, "README.md"))).toBeUndefined();
+    expect(index.changedFilePaths()).toEqual(
+      expect.arrayContaining([
+        models,
+        path.join(repo, "backend", "new_service.py"),
+      ])
+    );
   });
 
   async function createRepo(): Promise<string> {

@@ -23,6 +23,10 @@ export class GitStatusIndex {
     return undefined;
   }
 
+  changedFilePaths(): string[] {
+    return Array.from(this.files.keys());
+  }
+
   clear(): void {
     this.files.clear();
     this.folders.clear();

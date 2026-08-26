@@ -1,5 +1,8 @@
 import * as vscode from "vscode";
 import { DecorationManager } from "./decorations/decorationManager";
+import { shouldHighlightEditor } from "./editor/nativeDiffGuard";
+import { currentDiffGroups } from "./editor/vscodeDiffTabs";
+import { ChangedOnlyFilter } from "./explorer/changedOnlyFilter";
 import { ExplorerDecorationProvider } from "./explorer/explorerDecorationProvider";
 import { GitNotFoundError } from "./git/gitCommand";
 import { GitDiffProvider } from "./git/gitDiffProvider";
@@ -14,6 +17,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const decorations = new DecorationManager();
   const statusIndex = new GitStatusIndex();
   const explorer = new ExplorerDecorationProvider(statusIndex);
+  const changedOnly = new ChangedOnlyFilter(context);
   const statusBar = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Right,
     10
@@ -42,7 +46,14 @@ export function activate(context: vscode.ExtensionContext): void {
       decorations.clear(editor);
       return;
     }
-    if (editor.document.uri.scheme !== "file") {
+    if (
+      !shouldHighlightEditor({
+        scheme: editor.document.uri.scheme,
+        documentUri: editor.document.uri.toString(),
+        viewColumn: editor.viewColumn,
+        groups: currentDiffGroups(),
+      })
+    ) {
       decorations.clear(editor);
       return;
     }
@@ -76,19 +87,34 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   };
 
+  const refreshStatusIndex = async (): Promise<void> => {
+    if (!gitAvailable) {
+      statusIndex.clear();
+      return;
+    }
+    const folders =
+      vscode.workspace.workspaceFolders?.map((folder) => folder.uri.fsPath) ?? [];
+    await statusIndex.refreshFromWorkspaceFolders(folders);
+  };
+
   const refreshExplorer = async (): Promise<void> => {
     const config = readConfig();
-    if (!config.enabled || !config.highlightExplorer || !gitAvailable) {
+    const filterOn = changedOnly.isEnabled();
+    const decorateExplorer =
+      config.enabled && config.highlightExplorer && gitAvailable;
+    const needStatus = gitAvailable && (decorateExplorer || filterOn);
+    if (!needStatus) {
       statusIndex.clear();
       explorer.setEnabled(false);
       explorer.notify();
       return;
     }
-    explorer.setEnabled(true);
-    const folders =
-      vscode.workspace.workspaceFolders?.map((folder) => folder.uri.fsPath) ?? [];
-    await statusIndex.refreshFromWorkspaceFolders(folders);
+    explorer.setEnabled(decorateExplorer);
+    await refreshStatusIndex();
     explorer.notify();
+    if (filterOn) {
+      await changedOnly.sync(statusIndex);
+    }
   };
 
   const refreshVisible = async (gitRoot?: string): Promise<void> => {
@@ -128,6 +154,9 @@ export function activate(context: vscode.ExtensionContext): void {
       void refreshVisible(gitRoot);
     },
     () => {
+      if (changedOnly.isApplying()) {
+        return;
+      }
       void refreshExplorer();
     },
     readConfig().debounceMs
@@ -137,9 +166,16 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     decorations,
     explorer,
+    changedOnly,
     vscode.window.registerFileDecorationProvider(explorer),
     statusBar,
     watcher,
+    vscode.window.tabGroups.onDidChangeTabs(() => {
+      void Promise.all(currentEditors().map((editor) => refreshEditor(editor)));
+    }),
+    vscode.window.tabGroups.onDidChangeTabGroups(() => {
+      void Promise.all(currentEditors().map((editor) => refreshEditor(editor)));
+    }),
     vscode.workspace.onDidOpenTextDocument((document) => {
       if (document.uri.scheme === "file") {
         void refreshUri(document.uri);
@@ -176,9 +212,27 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand("aggressiveGitDiff.refresh", () => {
       void refreshVisible();
-    })
+    }),
+    vscode.commands.registerCommand(
+      "aggressiveGitDiff.toggleChangedOnly",
+      async () => {
+        if (!changedOnly.isEnabled()) {
+          await refreshStatusIndex();
+        }
+        await changedOnly.toggle(statusIndex);
+      }
+    ),
+    vscode.commands.registerCommand(
+      "aggressiveGitDiff.toggleChangedOnlyOn",
+      async () => {
+        await vscode.commands.executeCommand(
+          "aggressiveGitDiff.toggleChangedOnly"
+        );
+      }
+    )
   );
 
+  void changedOnly.activateContext();
   void refreshVisible();
   const retryFast = setTimeout(() => void refreshVisible(), 400);
   const retrySlow = setTimeout(() => void refreshVisible(), 1600);
