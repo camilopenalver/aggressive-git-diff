@@ -14,7 +14,7 @@ Conceptually: `git diff HEAD` (staged + unstaged).
 
 - **Added lines**: full-line green background.
 - **Modified lines**: aggressive green/amber background on the new line.
-- **Deleted lines**: each removed line is shown in place as red struck-through virtual text (`− the exact code`), not just a count.
+- **Deleted lines**: each removed line is shown in place as red virtual text (`− the exact code`), not just a count. The red background is the deletion signal; strikethrough stays off so the code stays readable (especially over Cursor's agent review overlay).
 - **Untracked files**: the entire file is painted as added.
 - **Explorer**: files and folders with changes vs HEAD get a bright color and a badge (`M`, `U`, `A`, `D`).
 - **Explorer filter**: a filter icon in the explorer title bar (next to New File) toggles a view that hides every file and folder without uncommitted changes.
@@ -66,6 +66,7 @@ The explorer filter button stays on until you click it again. It hides unchanged
   "aggressiveGitDiff.opacity": 0.25,
   "aggressiveGitDiff.showDeletedIndicators": true,
   "aggressiveGitDiff.showDeletedContent": true,
+  "aggressiveGitDiff.strikeDeletedLines": false,
   "aggressiveGitDiff.highlightWholeLine": true,
   "aggressiveGitDiff.highlightExplorer": true,
   "aggressiveGitDiff.debounceMs": 200,

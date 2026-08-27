@@ -297,6 +297,7 @@ function readConfig() {
     opacity: config.get<number>("opacity", 0.25),
     showDeletedIndicators: config.get<boolean>("showDeletedIndicators", true),
     showDeletedContent: config.get<boolean>("showDeletedContent", true),
+    strikeDeletedLines: config.get<boolean>("strikeDeletedLines", false),
     highlightWholeLine: config.get<boolean>("highlightWholeLine", true),
     highlightExplorer: config.get<boolean>("highlightExplorer", true),
     debounceMs: config.get<number>("debounceMs", 200),

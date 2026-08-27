@@ -67,3 +67,11 @@ function formatOneDeletedLine(line: string): string {
     raw.length > MAX_LINE_CHARS ? `${raw.slice(0, MAX_LINE_CHARS)}…` : raw;
   return `− ${clipped}`;
 }
+
+const DELETED_LINE_LAYOUT =
+  "display: block; width: 100%; white-space: pre; padding: 0 8px; box-sizing: border-box; border-left: 6px solid rgba(255, 70, 70, 0.95);";
+
+/** Layout for injected deleted lines. Red background is enough; strikethrough is optional. */
+export function deletedLineTextDecoration(strike = false): string {
+  return strike ? `line-through; ${DELETED_LINE_LAYOUT}` : DELETED_LINE_LAYOUT;
+}

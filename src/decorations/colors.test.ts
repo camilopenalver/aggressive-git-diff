@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatDeletedLabel, formatDeletedLines, withOpacity } from "./colors";
+import {
+  deletedLineTextDecoration,
+  formatDeletedLabel,
+  formatDeletedLines,
+  withOpacity,
+} from "./colors";
 
 describe("withOpacity", () => {
   it("replaces the alpha of an rgba color", () => {
@@ -52,5 +57,20 @@ describe("formatDeletedLines", () => {
 
   it("keeps empty deleted lines visible", () => {
     expect(formatDeletedLines([""])).toEqual(["− "]);
+  });
+});
+
+describe("deletedLineTextDecoration", () => {
+  it("does not strikethrough deleted lines by default", () => {
+    const style = deletedLineTextDecoration();
+    expect(style.startsWith("line-through")).toBe(false);
+    expect(style).toContain("display: block");
+    expect(style).toContain("border-left");
+  });
+
+  it("can opt back into strikethrough", () => {
+    expect(deletedLineTextDecoration(true).startsWith("line-through")).toBe(
+      true
+    );
   });
 });

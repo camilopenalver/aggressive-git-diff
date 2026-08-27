@@ -1,5 +1,10 @@
 import * as vscode from "vscode";
-import { formatDeletedLabel, formatDeletedLines, withOpacity } from "./colors";
+import {
+  deletedLineTextDecoration,
+  formatDeletedLabel,
+  formatDeletedLines,
+  withOpacity,
+} from "./colors";
 import type { FileDiffResult } from "../types";
 
 interface DecorationSet {
@@ -56,7 +61,11 @@ export class DecorationManager {
   apply(
     editor: vscode.TextEditor,
     result: FileDiffResult,
-    options: { showDeletedIndicators: boolean; showDeletedContent: boolean }
+    options: {
+      showDeletedIndicators: boolean;
+      showDeletedContent: boolean;
+      strikeDeletedLines: boolean;
+    }
   ): void {
     if (!this.decorations) {
       return;
@@ -84,11 +93,9 @@ export class DecorationManager {
             renderOptions: {
               [slot]: {
                 contentText,
-                color: "#ffc9c9",
                 backgroundColor: this.deletedLineBackground,
                 fontWeight: "normal",
-                textDecoration:
-                  "line-through; display: block; width: 100%; white-space: pre; padding: 0 8px; box-sizing: border-box; border-left: 6px solid rgba(255, 70, 70, 0.95);",
+                textDecoration: deletedLineTextDecoration(options.strikeDeletedLines),
               },
             },
           })) satisfies vscode.DecorationOptions[];

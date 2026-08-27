@@ -2,7 +2,7 @@
   "name": "aggressive-git-diff",
   "displayName": "Aggressive Git Diff",
   "description": "Highlight every uncommitted Git change vs HEAD with aggressive full-line green/red decorations. No recording, no sessions — always working tree vs HEAD.",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "publisher": "capegogu",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -128,6 +128,11 @@
           "type": "boolean",
           "default": true,
           "description": "Include a truncated preview of deleted text in the indicator."
+        },
+        "aggressiveGitDiff.strikeDeletedLines": {
+          "type": "boolean",
+          "default": false,
+          "description": "Draw a strikethrough on deleted lines. Off by default: the red background already marks deletions, and strikethrough becomes unreadable over Cursor's agent review overlay."
         },
         "aggressiveGitDiff.highlightWholeLine": {
           "type": "boolean",
